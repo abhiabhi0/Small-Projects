@@ -35,78 +35,65 @@ class Elevator
 
 void Elevator::set_request() 
 {
-	std::string dest_floor_str;
- 	int dest_floor;
+	std::string dest_floors_str; //stores all floors request
+ 	std::string dest_floor_str; //stores single floor in string
+ 	int dest_floor; // stores single floor as integer
+
  		
  	std::size_t num_of_reqs = capacity - passengers;
 	std::cout << "\n" << num_of_reqs << " passengers can enter in the elevator right now\n";
 	
-	std::cout << "\nEnter \"GO\" when all passengers are in elevator or there is no one to enter from the floor\n";
+	std::cout << "\nEnter \"GO\" if no one enters from the floor \nOr to exit from program if elevator is idle\n";
 
  	std::cout << "\nEnter destination floor number.\n";
- 	std::cin >> dest_floor_str;
- 	if (dest_floor_str != "GO" && dest_floor_str != "Go" &&
- 			dest_floor_str != "go" && dest_floor_str != "gO")
+
+ 	std::getline(std::cin, dest_floors_str);
+ 	std::stringstream sstream(dest_floors_str);
+
+ 	while (sstream >> dest_floor_str)
  	{
- 		std::stringstream sstream(dest_floor_str);
-		sstream >> dest_floor;
-		
- 		int is_valid = is_valid_request(dest_floor);
- 		if (is_valid == 0)
+ 		if (dest_floor_str == "GO" || dest_floor_str == "Go" || dest_floor_str == "go" || dest_floor_str == "gO")
  		{
- 			if (passengers == 0)
-		 	{
- 	 			set_direction(dest_floor);
- 	 		}
- 	 		requests.push_back(dest_floor);
- 			passengers++;
-		}
-
-		for (std::size_t i = 1; i < num_of_reqs; ++i)
+ 			return;
+ 		}
+ 		else
  		{
- 			std::cin >> dest_floor_str;
- 			if (dest_floor_str == "GO" || dest_floor_str == "Go" ||
- 					dest_floor_str == "go" || dest_floor_str == "gO")
+ 			dest_floor = std::stoi(dest_floor_str);
+ 			if (passengers < capacity)
  			{
- 				break;
+ 				int is_valid = is_valid_request(dest_floor);
+ 				if (is_valid == 0)
+ 				{
+ 					if (passengers == 0)
+		 			{
+ 	 					set_direction(dest_floor);
+ 	 				}
+ 	 				requests.push_back(dest_floor);
+ 					passengers++;
+				}
  			}
-
- 			std::stringstream sstream(dest_floor_str);
- 			sstream >> dest_floor;
- 			
- 			int is_valid = is_valid_request(dest_floor);
-			if (is_valid == 0)
+ 			else if (passengers == capacity)
  			{
- 				requests.push_back(dest_floor);
- 				passengers++;
-			}
-
-			if (passengers == capacity)
-			{
-				std::cout << "No more entry. Elevator is full!!\n";
-				break;
-			}
-		}
+ 				std::cout << "Elevator full!! Cannot accept more requests\n";
+ 				return;
+ 			}
+ 		}
  	}
 }
 
 int Elevator::check_request(int floor) const
 {
- 	if (passengers >= capacity)
-    {
- 		return 1;
- 	}
- 	else if (passengers != 0 && direction == UP && floor < current_floor)
+ 	if (passengers != 0 && direction == UP && floor < current_floor)
  	{
- 		return 2;
+ 		return 1;
  	}
  	else if (passengers != 0 && direction == DOWN && floor > current_floor)
  	{
- 		return 3;
+ 		return 2;
  	}
  	else if (floor > max_floor || floor < min_floor)
  	{
- 		return 4;
+ 		return 3;
  	}
  	else
  	{
@@ -120,17 +107,13 @@ int Elevator::is_valid_request(int floor)
 
  	if (issue_num == 1)
  	{
- 		std::cout << "Elevator is Full!!\n";
+ 		std::cout << "Elevator is going UP.\n";
  	}
  	else if (issue_num == 2)
  	{
- 		std::cout << "Elevator is going UP.\n";
- 	}
- 	else if (issue_num == 3)
- 	{
  		std::cout << "Elevator is going DOWN.\n";
  	}
- 	else if (issue_num == 4)
+ 	else if (issue_num == 3)
  	{
  		std::cout << "This floor does not exist\n";
  	}
@@ -151,30 +134,32 @@ void Elevator::set_direction(int floor)
 
 void Elevator::start_elevator()
 {
- 	std::cout << "\nThe current floor is " << current_floor << " and number of person in elevator are " << passengers <<"\n";
+ 	std::cout << "\nFLOOR : " << current_floor << "\tNumber of Occupants : " << passengers <<"\n";
 
  	//Entering requests for first time
  	set_request(); 
  	std::sort(requests.begin(), requests.end());
+ 	int next_floor;
 
  	while (!requests.empty())
  	{
  		if (direction == UP)
  		{
- 			current_floor = requests[0];
+ 			next_floor = requests[0];
  		}
  		else if (direction == DOWN)
  		{
- 			current_floor = requests[requests.size() - 1];
+ 			next_floor = requests[requests.size() - 1];
  		}
 
- 		auto curr_floor_req = std::find(requests.begin(), requests.end(), current_floor);
- 		while (curr_floor_req != requests.end())
+ 		auto next_floor_req = std::find(requests.begin(), requests.end(), next_floor);
+ 		while (next_floor_req != requests.end())
  		{
- 			requests.erase(curr_floor_req); //removing current floor's requests
+ 			requests.erase(next_floor_req); //removing next floor's requests
  			passengers--;
- 			curr_floor_req = std::find(requests.begin(), requests.end(), current_floor);
+ 			next_floor_req = std::find(requests.begin(), requests.end(), next_floor);
  		}
+ 		current_floor = next_floor;
 
  		std::string dir;
  		if (direction == UP)
@@ -188,12 +173,12 @@ void Elevator::start_elevator()
 
  		//Entering requests for current floor
  		std::cout << "\n=======================================================\n"
-    		"The current floor is " << current_floor 
-    		<< " and number of people in the elevator is " << passengers 
-    		<< "\n\nDirection of elevator is " << dir 
-    		<< " and Total capacity of the elevator is " << capacity
+    		"FLOOR : " << current_floor 
+    		<< "\tNumber of Occupants : " << passengers 
+    		<< "\n\nDIRECTION : " << dir 
+    		<< "\tTotal Capacity : " << capacity
     		<< "\n\nMinimum floor number is " << min_floor
-    		<< " and Maximum floor number is " << max_floor
+    		<< "\tMaximum floor number is " << max_floor
     		<< "\n\n=======================================================\n";
 
  		if (current_floor == max_floor)
@@ -220,11 +205,12 @@ int main()
 	std::cin >> min_floor_num_str;
 	std::cin >> max_floor_num_str;
 
-	min_floor_num = stoi(min_floor_num_str);
-	max_floor_num = stoi(max_floor_num_str);
+	min_floor_num = std::stoi(min_floor_num_str);
+	max_floor_num = std::stoi(max_floor_num_str);
 
 	std::cout << "Enter capacity for the elevator\n";
 	std::cin >> capacity_str;
+	std::cin.ignore();
 	std::stringstream capacity_stream(capacity_str);
 	capacity_stream >> capacity;
 
