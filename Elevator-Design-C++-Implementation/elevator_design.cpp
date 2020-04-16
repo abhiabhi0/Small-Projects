@@ -27,7 +27,6 @@ class Elevator
  	void start_elevator();
 
  private:
- 	void set_initial_request();
  	void set_request();
  	int check_request(int floor) const;
  	int is_valid_request(int floor);
